@@ -4,29 +4,23 @@ This document outlines the Git workflow and standards for the `ico` repository t
 
 ## 1. Branching Model
 
-We follow a simplified **Git Flow** model optimized for the use of **Git Worktrees**.
+We follow a strict **Feature Branch** model based on a protected `main` branch.
 
 ### Primary Branches
-- **`main`**: The stable, production-ready branch. Only fully tested and reviewed code should be merged here.
-- **`dev`**: The integration branch for ongoing development. This is where features are combined before moving to `main`.
+- **`main`**: **PROTECTED (Pull-Only for Humans).** No direct commits are allowed. This branch represents stable, production-ready code.
+- **`dev`**: The primary integration branch. All feature work is merged here via Pull Requests before eventually being promoted to `main`.
 
 ### Supporting Branches
-- **`feature/`**: Used for new features (e.g., `feature/add-bmp-support`).
-- **`fix/`**: Used for bug fixes (e.g., `fix/path-encoding-issue`).
+- **`feature/`**: **Mandatory for all new work.** Branches must be created from `dev` (e.g., `feature/multi-res-extraction`).
+- **`fix/`**: Used for bug fixes, also created from `dev`.
 - **`docs/`**: Used for documentation-only changes.
 
 ## 2. Worktree Strategy
 
 To maintain focus and avoid frequent context switching (stashing/unstashing), we utilize Git Worktrees:
 
-- **Root (`/ico`)**: Dedicated to the `main` branch. Use this for final verification and releases.
-- **Dev Tree (`/ico-devtree`)**: Dedicated to the `dev` branch. All active development and feature integration happens here.
-
-### Creating a Feature Worktree
-If a feature requires a long-lived isolated environment:
-```powershell
-git worktree add ../ico-feature-name feature/branch-name
-```
+- **Root (`/ico`)**: Dedicated to the `main` branch. **Used for syncing/pulling only.**
+- **Dev Tree (`/ico-devtree`)**: Dedicated to the `dev` branch and for creating feature branches.
 
 ## 3. Commit Message Convention
 
@@ -39,19 +33,26 @@ We use a lightweight version of **Conventional Commits**:
 - **refactor**: Code change that neither fixes a bug nor adds a feature
 - **test**: Adding or correcting tests
 
-*Example: `feat: add support for multi-resolution icon extraction`*
+## 4. Mandatory Workflow (Plan -> Act -> Validate)
 
-## 4. Workflow Steps
+1.  **Branch Creation**: Always create a new `feature/` branch from the latest `dev`.
+    ```powershell
+    git checkout dev
+    git pull origin dev
+    git checkout -b feature/your-feature-name
+    ```
+2.  **Implementation**: Work only within your feature branch.
+3.  **Commit**: Commit your changes using the naming convention.
+4.  **Integration (PR)**: Create a Pull Request (PR) to merge your feature branch back into `dev`. **Do not merge locally.**
+5.  **Hygiene & Cleanup**: Once the PR is merged into `dev`:
+    - Pull the updated `dev` locally.
+    - Delete the local and remote feature branch to maintain repository hygiene.
+    ```powershell
+    git branch -d feature/your-feature-name
+    git push origin --delete feature/your-feature-name
+    ```
 
-1.  **Start Work**: Navigate to the `ico-devtree` directory.
-2.  **Sync**: Always `git pull origin dev` before starting.
-3.  **Implement**: Make changes, run local tests (PowerShell memory loading).
-4.  **Commit**: `git add .` and `git commit -m "type: description"`.
-5.  **Push**: `git push origin dev`.
-6.  **Release**: When `dev` is stable, merge into `main` (via PR or local merge if authorized).
+## 5. Remote Sync & Protection
 
-## 5. Remote Sync (GitHub)
-
-- **Remote Name**: `origin`
-- **URL**: `https://github.com/FAT-gh/ico.git`
-- **Syncing**: Use `gh repo sync` or `git pull --rebase` to keep local environments clean.
+- **Main Protection**: Never `git push origin main`. Only `git pull` is permitted to sync your local environment with the production state.
+- **PR Requirement**: All changes to `dev` and `main` must pass through the GitHub PR interface to ensure auditability and quality control.
